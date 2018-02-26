@@ -1,0 +1,15 @@
+#!/bin/bash
+
+logMessage() {
+    echo $(cat << EOF
+        {
+            "level": 20,
+            "time":$(date +%s),
+            "pid":$$,
+            "hostname": "$HOSTNAME",
+            "msg": "$1",
+            "v": 1
+        }
+EOF
+    ) | jq '.'
+}

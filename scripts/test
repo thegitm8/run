@@ -1,0 +1,3 @@
+#!/bin/bash
+
+GURPS4_SERVER_DISABLE_LOGS=true npx mocha --recursive

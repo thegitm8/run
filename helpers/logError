@@ -1,0 +1,8 @@
+#!/bin/bash
+
+RED='\033[0;31m'
+NORMAL='\033[0m' # No Color
+
+logError() {
+    echo -e "${RED}RUN_ERROR: $1${NORMAL}\n"
+}

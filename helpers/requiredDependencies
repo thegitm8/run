@@ -1,0 +1,22 @@
+#!/bin/bash
+
+requiredDependencies() {
+    dependencies=$@
+    missingDependencies=()
+
+    for dep in ${dependencies[@]}; do
+        if ! type $dep >/dev/null 2>&1; then
+            missingDependencies+=("$dep")
+        fi
+    done
+
+    if [ ${#missingDependencies[@]} -gt 0 ]; then
+        echo
+        logError "Dependencies [${normal} $missingDependencies ${red}] not installed."
+        logError "This/those tools need to be installed for this script to work."
+        exit 1
+    fi
+}
+
+
+

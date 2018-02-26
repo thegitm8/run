@@ -1,0 +1,33 @@
+#!/bin/bash
+
+DATA_DIRECTORY=".data"
+
+# create data directory
+if [ ! -d "$DATA_DIRECTORY" ]; then
+    mkdir $DATA_DIRECTORY
+    find $DATA_DIRECTORY -type d -exec chmod 700 {} \;
+fi
+
+# create .env file if it doesn't exist
+if [ ! -f ".env" ]; then
+    SECRET=$(</dev/urandom tr -dc 'A-Za-z0-9!"#$%&'\''()*+,-./:;<=>?@[\]^_`{|}~' | head -c 100  ; echo)
+
+    cp .env.example .env
+    echo "GURPS4_SERVER_SECRET="$SECRET >> .env
+fi
+
+
+
+
+
+
+# create keys
+# ssh-keygen \
+#     -t rsa \
+#     -b 4096 \
+#     -P "" \
+#     -C "gurps4@antlike.tech" \
+#     -f $DATA_DIRECTORY/gurps.key \
+#     >/dev/null
+
+# find $DATA_DIRECTORY -type f -exec chmod 600 {} \;
