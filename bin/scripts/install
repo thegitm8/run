@@ -13,7 +13,7 @@ if [ ! -f ".env" ]; then
     SECRET=$(</dev/urandom tr -dc 'A-Za-z0-9!"#$%&'\''()*+,-./:;<=>?@[\]^_`{|}~' | head -c 100  ; echo)
 
     cp .env.example .env
-    echo "GURPS4_SERVER_SECRET="$SECRET >> .env
+    echo "GURPS4_SERVER_SECRET=$SECRET" >> .env
 fi
 
 

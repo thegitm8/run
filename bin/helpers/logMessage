@@ -1,7 +1,8 @@
 #!/bin/bash
 
 logMessage() {
-    echo $(cat << EOF
+    # shellcheck disable=SC2005
+    echo "$(cat << EOF
         {
             "level": 20,
             "time":$(date +%s),
@@ -11,5 +12,5 @@ logMessage() {
             "v": 1
         }
 EOF
-    ) | jq '.'
+    )" | jq '.'
 }

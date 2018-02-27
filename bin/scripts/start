@@ -3,7 +3,7 @@
 SUB_COMMAND=$1 && shift
 
 if [ -f "$SCRIPT_DIR/scripts/start_scripts/$SUB_COMMAND" ]; then
-    loadScript "scripts/start_scripts/$SUB_COMMAND" $@;
+    loadScript "scripts/start_scripts/$SUB_COMMAND" "$@";
 else
     showHelp "Missing subscript: \"$SUB_COMMAND\""
 fi
