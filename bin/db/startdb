@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+
+
+function startdb() {
+    if [ ! -d ".db" ]; then
+        mkdir .db
+    fi
+
+    case "$1" in
+        mongo)
+            startMongoDBDevContainer
+            break
+            ;;
+        influx)
+            startInfluxDBDevContainer
+            break
+            ;;
+        *)
+            logError "$1 DB is not available."
+            exit 1
+            ;;
+    esac
+}

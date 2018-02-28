@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+
+CONTAINER_NAME="$PACKAGE_NAME"_mongo_db
+
+createMongodbDockerContainer() {
+
+    docker run \
+        --name $CONTAINER_NAME \
+        -v $(pwd)/.db/mongo:/data/db \
+        -p 27017:27017 \
+        -d mongo:latest 2>/dev/null
+
+}
+
+stopMongoDBDevContainer() {
+
+    MONGO_EXPORT="mongoexport -d $CONTAINER_NAME -c files -o /data/db/$CONTAINER_NAME.json"
+
+    # running mongoexport in the container, creating a dump of the db
+    _SWALLOW=$(docker exec $CONTAINER_NAME /bin/bash -c "$MONGO_EXPORT" 2>/dev/null)
+    # stop the container
+    _SWALLOW=$(docker stop $CONTAINER_NAME)
+
+    logMessage "Stopped dev DB container: $CONTAINER_NAME (dump @ .db/$CONTAINER_NAME.json)"
+
+}
+trap stopMongoDBDevContainer EXIT
+
+startMongoDBDevContainer() {
+
+    if [ ! -d ".db/mongo" ]; then
+        mkdir .db/mongo
+    fi
+
+    # start the container if it exists or create otherwise
+    _SWALLOW=$(docker start $CONTAINER_NAME || createMongodbDockerContainer)
+    logMessage "Started dev DB container: $CONTAINER_NAME"
+
+}
+

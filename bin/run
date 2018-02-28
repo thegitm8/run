@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -e
 
 # find local installation of script
@@ -14,24 +14,34 @@ done
 export SCRIPT_DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 export NODE_ENV=production
 
+if [ -f "package.json" ]; then
+    TMP_NAME="$(jq -r .name package.json | tr / _)"
+    export PACKAGE_NAME="${TMP_NAME//@}"
+else
+    export PACKAGE_NAME="run_app"
+fi
+
 loadScript() {
     LOCAL_SCRIPT=$1 && shift
     source "$SCRIPT_DIR/$LOCAL_SCRIPT" "$@"
 }
 
-#
-# start RUN
-#
 loadScript helpers/logError
 loadScript helpers/logMessage
 loadScript helpers/requiredDependencies
 loadScript helpers/showHelp
+loadScript db/startdb
+loadScript db/mongo
+loadScript db/influx
+
+requiredDependencies docker jq node npm
 
 # exit with help if no arguments are specified
 if [[ $# -eq 0 ]] ; then showHelp; fi
 
-# check options
-while test $# -gt 0; do
+
+# parse arguments
+while test $# -gt 0; do # check options
     case "$1" in
         -h|--help)
             showHelp
@@ -40,22 +50,27 @@ while test $# -gt 0; do
             shift
             export NODE_ENV=development
             ;;
+        -w|--withdb)
+            shift
+            startdb $1 & shift
+            ;;
         *)
             break
             ;;
     esac
 done
-
+echo
 SCRIPT=$1 && shift
+# if run has a script with the provided name, run it
 if [ -f "$SCRIPT_DIR/scripts/$SCRIPT" ]; then
 
-    # trap 'if [[ "$?" -ne "0" ]]; then showHelp; fi' EXIT;
     loadScript "scripts/$SCRIPT" "$@"
 
-else
+else # if run doesn't have this script, run "npm run" instead
 
     # shellcheck disable=SC2016
     SCRIPT_CONTENT=$(jq -r --arg SCRIPT "$SCRIPT" '.scripts[$SCRIPT]' package.json)
+
     if [ "$SCRIPT_CONTENT" == "null" ]; then
         showHelp "Command \"$SCRIPT\" not found on RUN or in package.json."
     fi

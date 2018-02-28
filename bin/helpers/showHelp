@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 showHelp() {
     cat<< EOF
@@ -18,11 +18,12 @@ Usage:
 Options:
     -h, --help      show brief help
     -d,--develop    run in development mode
+    -w,--withdb     start docker container with specified DB [ "mongo", "influx" ]
 
 Examples:
     run start server
     run -d start client
-    run test
+    run -d -w mongo start server
 
 EOF
 

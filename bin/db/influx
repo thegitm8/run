@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+CONTAINER_NAME="$PACKAGE_NAME"_influx_db
+
+
+
+createInfluxdbDockerContainer() {
+
+    docker run \
+        --name $CONTAINER_NAME \
+        -v $(pwd)/.db/influx:/var/lib/influxdb \
+        -p 8086:8086 \
+        -d influxdb:latest 2>/dev/null
+
+}
+stopInfluxDBDevContainer() {
+    # stop the container
+    _SWALLOW=$(docker stop $CONTAINER_NAME)
+    logMessage "Stopped InfluxDB container: $CONTAINER_NAME"
+
+}
+trap stopInfluxDBDevContainer EXIT
+
+startInfluxDBDevContainer() {
+
+    if [ ! -d ".db/influx" ]; then
+        mkdir .db/influx
+    fi
+
+    # start the container if it exists or create otherwise
+    _SWALLOW=$(docker start $CONTAINER_NAME || createInfluxdbDockerContainer)
+    logMessage "Started InfluxDB container: $CONTAINER_NAME"
+
+}
+
+

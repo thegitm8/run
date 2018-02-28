@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 logMessage() {
     # shellcheck disable=SC2005

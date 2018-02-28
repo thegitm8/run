@@ -1,54 +1,12 @@
-#!/bin/bash
-requiredDependencies docker jq
-
-CONTAINER_NAME=$(jq -r .name package.json)_db
-MAIN=$(jq -r .main package.json)
-
-
-createDockerContainer() {
-
-    docker run \
-        --name $CONTAINER_NAME \
-        -v $(pwd)/.db:/data/db \
-        -p 27017:27017 \
-        -d mongo:latest 2>/dev/null
-
-}
-
-startMongoDBDevContainer() {
-
-    # start the container if it exists or create otherwise
-    _SWALLOW=$(docker start $CONTAINER_NAME || createDockerContainer)
-    logMessage "Started dev DB container: $CONTAINER_NAME"
-
-}
-
-stopMongoDBDevContainer() {
-
-    MONGO_EXPORT="mongoexport -d $CONTAINER_NAME -c files -o /data/db/$CONTAINER_NAME.json"
-
-    # running mongoexport in the container, creating a dump of the db
-    _SWALLOW=$(docker exec $CONTAINER_NAME /bin/bash -c "$MONGO_EXPORT" 2>/dev/null)
-    # stop the container
-    _SWALLOW=$(docker stop $CONTAINER_NAME)
-
-    logMessage "Stopped dev DB container: $CONTAINER_NAME (dump @ .db/$CONTAINER_NAME.json)"
-
-}
+#!/usr/bin/env bash
 
 if [ ! -d "node_modules" ]; then npm i; fi
 
 if [ "$NODE_ENV" == "development" ]; then # run in development mode
 
-    # setup db
-    startMongoDBDevContainer
-    trap stopMongoDBDevContainer EXIT
-
-    # start app
     npx nodemon \
         --quiet \
-        --no-update-notifier \
-        --watch $MAIN | jq '.'
+        --watch | jq '.'
 
 else # run in production mode
 
