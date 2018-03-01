@@ -24,7 +24,6 @@ stopMongoDBDevContainer() {
     logMessage "Stopped dev DB container: $CONTAINER_NAME (dump @ .db/$CONTAINER_NAME.json)"
 
 }
-trap stopMongoDBDevContainer EXIT
 
 startMongoDBDevContainer() {
 

@@ -19,7 +19,7 @@ stopInfluxDBDevContainer() {
     logMessage "Stopped InfluxDB container: $CONTAINER_NAME"
 
 }
-trap stopInfluxDBDevContainer EXIT
+
 
 startInfluxDBDevContainer() {
 

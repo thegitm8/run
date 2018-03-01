@@ -10,10 +10,12 @@ function startdb() {
     case "$1" in
         mongo)
             startMongoDBDevContainer
+            trap stopMongoDBDevContainer EXIT
             break
             ;;
         influx)
             startInfluxDBDevContainer
+            trap stopInfluxDBDevContainer EXIT
             break
             ;;
         *)
