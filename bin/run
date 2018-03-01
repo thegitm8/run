@@ -59,8 +59,9 @@ while test $# -gt 0; do # check options
             ;;
     esac
 done
-echo
+
 SCRIPT=$1 && shift
+
 # if run has a script with the provided name, run it
 if [ -f "$SCRIPT_DIR/scripts/$SCRIPT" ]; then
 

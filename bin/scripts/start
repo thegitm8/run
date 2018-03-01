@@ -1,12 +1,20 @@
 #!/usr/bin/env bash
 
-SUB_COMMAND=$1 && shift
-MAIN=$(grep -o '"main": *"[^"]*"' package.json | grep -o '"[^"]*"$' | tr -d '"')
+SUB_COMMAND=$1
+MAIN=$(grep -o '"main": *"[^"]*"' package.json 2>&1 >/dev/null | grep -o '"[^"]*"$' | tr -d '"')
 
 if [ -f "$SCRIPT_DIR/scripts/start_scripts/$SUB_COMMAND" ]; then
+
+    shift
     loadScript "scripts/start_scripts/$SUB_COMMAND" "$@";
+
 else
-    if [ ! -d "node_modules" ]; then npm i; fi
+
+    if [ -f "package.json" ]; then
+        if [ ! -d "node_modules" ]; then
+            npm i
+        fi
+    fi
 
     if [ "$NODE_ENV" == "development" ]; then # run in development mode
 
@@ -16,10 +24,11 @@ else
 
     else # run in production mode
 
-        if [ ! -d "build" ]; then loadScript scripts/build; fi
-
-        node $MAIN
-
+        if [ "$MAIN" ]; then
+            node $MAIN
+        else
+            logError "Unable to find a suitable starting point."
+        fi
     fi
 fi
 
