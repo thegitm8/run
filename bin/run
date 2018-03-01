@@ -1,81 +1,98 @@
 #!/usr/bin/env bash
 set -e
 
-# find local installation of script
-SOURCE="${BASH_SOURCE[0]}"
-while [ -h "$SOURCE" ]; do
-    DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
-    SOURCE="$(readlink "$SOURCE")"
-    [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
-done
+function findRunScriptDirectory() {
+    # find local installation of script
+    local DIR
+    local SOURCE
 
-# export script globals
-# shellcheck disable=SC2155
-export SCRIPT_DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
-export NODE_ENV=production
+    SOURCE="${BASH_SOURCE[0]}"
+    while [ -h "$SOURCE" ]; do
+        DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+        SOURCE="$(readlink "$SOURCE")"
+        [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+    done
 
-if [ -f "package.json" ]; then
-    TMP_NAME="$(jq -r .name package.json | tr / _)"
-    export PACKAGE_NAME="${TMP_NAME//@}"
-else
-    export PACKAGE_NAME="run_app"
-fi
-
-loadScript() {
-    LOCAL_SCRIPT=$1 && shift
-    source "$SCRIPT_DIR/$LOCAL_SCRIPT" "$@"
+    echo "$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 }
 
-loadScript helpers/logError
-loadScript helpers/logMessage
-loadScript helpers/requiredDependencies
-loadScript helpers/showHelp
-loadScript db/startdb
-loadScript db/mongo
-loadScript db/influx
+RUN_SCRIPT_DIR="$(findRunScriptDirectory)"
 
-requiredDependencies docker jq node npm
 
-# exit with help if no arguments are specified
+function require() { local SCRIPT=$1 && shift && source "$RUN_SCRIPT_DIR/$SCRIPT" "$@"; }
+
+require helpers/logError
+require helpers/logMessage
+require helpers/requiredDependencies
+require helpers/showHelp
+require db/startdb
+
+requiredDependencies node npm
 if [[ $# -eq 0 ]] ; then showHelp; fi
 
+################################################
 
-# parse arguments
-while test $# -gt 0; do # check options
-    case "$1" in
-        -h|--help)
-            showHelp
-            ;;
-        -d)
-            shift
-            export NODE_ENV=development
-            ;;
-        -w|--withdb)
-            shift
-            startdb $1 & shift
-            ;;
-        *)
-            break
-            ;;
-    esac
-done
+function run_main() {
 
-SCRIPT=$1 && shift
+    export NODE_ENV=production
 
-# if run has a script with the provided name, run it
-if [ -f "$SCRIPT_DIR/scripts/$SCRIPT" ]; then
+    if [ -f "package.json" ]; then
 
-    loadScript "scripts/$SCRIPT" "$@"
+        TMP_NAME=$(node -e "console.log(require('./package.json').name)" | tr / _)
+        export PACKAGE_NAME="${TMP_NAME//@}"
 
-else # if run doesn't have this script, run "npm run" instead
+    else
 
-    # shellcheck disable=SC2016
-    SCRIPT_CONTENT=$(jq -r --arg SCRIPT "$SCRIPT" '.scripts[$SCRIPT]' package.json)
+        export PACKAGE_NAME="run_app"
 
-    if [ "$SCRIPT_CONTENT" == "null" ]; then
-        showHelp "Command \"$SCRIPT\" not found on RUN or in package.json."
     fi
 
-    npm run "$SCRIPT"
+    while test $# -gt 0; do # check options
+        case "$1" in
+            -h|--help)
+                showHelp
+                ;;
+            -d)
+                shift
+                export NODE_ENV=development
+                ;;
+            -w|--withdb)
+                shift
+                startdb $1 & shift
+                ;;
+            *)
+                break
+                ;;
+        esac
+    done
 
-fi
+    local SCRIPT=$1 && shift
+
+    if [ -f "package.json" ]; then
+
+        SECOND_LEVEL_SCRIPT="$SCRIPT:$1"
+        COMMAND=$(node -e "console.log(require('./package.json').scripts['$SCRIPT'] || '')")
+        SECOND_LEVEL_COMMAND=$(node -e "console.log(require('./package.json').scripts['"$SECOND_LEVEL_SCRIPT"'] || '')")
+
+        if [ ! -z "$SECOND_LEVEL_COMMAND" ]; then
+            shift
+            npm --silent run "$SECOND_LEVEL_SCRIPT" -- $@
+            exit $?
+
+        elif [ ! -z "$COMMAND" ]; then
+            npm --silent run "$SCRIPT" -- $@
+            exit $?
+        fi
+
+
+    fi
+
+    # if run has a script with the provided name, run it
+    if [ -f "$RUN_SCRIPT_DIR/scripts/$SCRIPT" ]; then
+        require "scripts/$SCRIPT" "$@"
+        exit $?
+
+    fi
+}
+
+run_main $@

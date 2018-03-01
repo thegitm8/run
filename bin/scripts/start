@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 SUB_COMMAND=$1
-MAIN=$(grep -o '"main": *"[^"]*"' package.json 2>&1 >/dev/null | grep -o '"[^"]*"$' | tr -d '"')
 
 if [ -f "$SCRIPT_DIR/scripts/start_scripts/$SUB_COMMAND" ]; then
 
@@ -24,10 +23,13 @@ else
 
     else # run in production mode
 
-        if [ "$MAIN" ]; then
-            node $MAIN
+        MAIN_TARGET=$(node -e "console.log(require('./package.json').main || '')")
+
+        if [ ! "$MAIN_TARGET" == "" ]; then
+            node $MAIN_TARGET
         else
             logError "Unable to find a suitable starting point."
+            exit 1
         fi
     fi
 fi

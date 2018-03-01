@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
+requiredDependencies docker
 
 CONTAINER_NAME="$PACKAGE_NAME"_influx_db
-
-
 
 createInfluxdbDockerContainer() {
 
