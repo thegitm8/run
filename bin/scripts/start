@@ -1,10 +1,25 @@
 #!/usr/bin/env bash
 
 SUB_COMMAND=$1 && shift
+MAIN=$(grep -o '"main": *"[^"]*"' package.json | grep -o '"[^"]*"$' | tr -d '"')
 
 if [ -f "$SCRIPT_DIR/scripts/start_scripts/$SUB_COMMAND" ]; then
     loadScript "scripts/start_scripts/$SUB_COMMAND" "$@";
 else
-    showHelp "Missing subscript: \"$SUB_COMMAND\""
+    if [ ! -d "node_modules" ]; then npm i; fi
+
+    if [ "$NODE_ENV" == "development" ]; then # run in development mode
+
+        npx nodemon \
+            --quiet \
+            --watch | jq '.'
+
+    else # run in production mode
+
+        if [ ! -d "build" ]; then loadScript scripts/build; fi
+
+        node $MAIN
+
+    fi
 fi
 
