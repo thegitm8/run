@@ -10,13 +10,13 @@ function startdb() {
             require db/mongo
             startMongoDBDevContainer
             trap stopMongoDBDevContainer EXIT
-            break
+            return
             ;;
         influx)
             require db/influx
             startInfluxDBDevContainer
             trap stopInfluxDBDevContainer EXIT
-            break
+            return
             ;;
         *)
             logError "$1 DB is not available."

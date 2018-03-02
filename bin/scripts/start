@@ -26,7 +26,7 @@ else
         MAIN_TARGET=$(node -e "console.log(require('./package.json').main || '')")
 
         if [ ! "$MAIN_TARGET" == "" ]; then
-            node $MAIN_TARGET
+            node "$MAIN_TARGET"
         else
             logError "Unable to find a suitable starting point."
             exit 1

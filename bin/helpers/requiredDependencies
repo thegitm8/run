@@ -6,7 +6,7 @@ requiredDependencies() {
     missingDependencies=()
 
     for dep in "${dependencies[@]}"; do
-        if ! type $dep >/dev/null 2>&1; then
+        if ! type "$dep" >/dev/null 2>&1; then
             missingDependencies+=("$dep")
         fi
     done
