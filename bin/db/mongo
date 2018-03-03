@@ -3,18 +3,8 @@ requiredDependencies docker
 
 CONTAINER_NAME="$PACKAGE_NAME"_mongo_db
 
-createMongodbDockerContainer() {
 
-    docker run \
-        --name "$CONTAINER_NAME" \
-        -v "$(pwd)/.db/mongo:/data/db" \
-        -p 27017:27017 \
-        -d mongo:latest 2>/dev/null
-
-}
-
-stopMongoDBDevContainer() {
-
+function stopMongoDBDevContainer() {
     MONGO_EXPORT="mongoexport -d $CONTAINER_NAME -c files -o /data/db/$CONTAINER_NAME.json"
 
     # running mongoexport in the container, creating a dump of the db
@@ -28,7 +18,20 @@ stopMongoDBDevContainer() {
 
 }
 
-startMongoDBDevContainer() {
+
+
+
+function createMongodbDockerContainer() {
+
+    docker run \
+        --name "$CONTAINER_NAME" \
+        -v "$(pwd)/.db/mongo:/data/db" \
+        -p 27017:27017 \
+        -d mongo:latest 2>/dev/null
+
+}
+
+function startMongoDBDevContainer() {
 
     if [ ! -d ".db/mongo" ]; then
         mkdir .db/mongo
@@ -36,8 +39,11 @@ startMongoDBDevContainer() {
 
     # start the container if it exists or create otherwise
     # shellcheck disable=SC2034
-    _SWALLOW=$(docker start "$CONTAINER_NAME" || createMongodbDockerContainer)
+    _SWALLOW=$(docker start "$CONTAINER_NAME" 2>/dev/null || createMongodbDockerContainer)
     logMessage "Started dev DB container: $CONTAINER_NAME"
 
 }
+
+
+
 

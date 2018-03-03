@@ -19,7 +19,9 @@ else
 
         npx nodemon \
             --quiet \
-            --watch | jq '.'
+            --watch \
+            --no-update-notifier \
+            --watch $MAIN
 
     else # run in production mode
 

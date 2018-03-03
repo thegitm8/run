@@ -25,74 +25,94 @@ require helpers/logError
 require helpers/logMessage
 require helpers/requiredDependencies
 require helpers/showHelp
-require db/startdb
+
 
 requiredDependencies node npm
 if [[ $# -eq 0 ]] ; then showHelp; fi
 
 ################################################
 
-function run_main() {
+export NODE_ENV=production
 
-    export NODE_ENV=production
+if [ -f "package.json" ]; then
 
-    if [ -f "package.json" ]; then
+    TMP_NAME=$(node -e "console.log(require('./package.json').name)" | tr / _)
+    export PACKAGE_NAME="${TMP_NAME//@}"
 
-        TMP_NAME=$(node -e "console.log(require('./package.json').name)" | tr / _)
-        export PACKAGE_NAME="${TMP_NAME//@}"
+else
 
-    else
+    export PACKAGE_NAME="run_app"
 
-        export PACKAGE_NAME="run_app"
+fi
 
-    fi
-
-    while test $# -gt 0; do # check options
-        case "$1" in
-            -h|--help)
-                showHelp
-                ;;
-            -d)
-                shift
-                export NODE_ENV=development
-                ;;
-            -w|--withdb)
-                shift
-                startdb $1 & shift
-                ;;
-            *)
-                break
-                ;;
-        esac
-    done
-
-    local SCRIPT=$1 && shift
-
-    if [ -f "package.json" ]; then
-
-        SECOND_LEVEL_SCRIPT="$SCRIPT:$1"
-        COMMAND=$(node -e "console.log(require('./package.json').scripts['$SCRIPT'] || '')")
-        SECOND_LEVEL_COMMAND=$(node -e "console.log(require('./package.json').scripts['"$SECOND_LEVEL_SCRIPT"'] || '')")
-
-        if [ ! -z "$SECOND_LEVEL_COMMAND" ]; then
+while test $# -gt 0; do # check options
+    case "$1" in
+        -h|--help)
+            showHelp
+            ;;
+        -d)
             shift
-            npm --silent run "$SECOND_LEVEL_SCRIPT" -- $@
-            exit $?
+            export NODE_ENV=development
+            ;;
+        -w|--withdb)
+            shift
+            if [ ! -d ".db" ]; then
+                mkdir .db
+            fi
 
-        elif [ ! -z "$COMMAND" ]; then
-            npm --silent run "$SCRIPT" -- $@
-            exit $?
-        fi
+            case "$1" in
+                mongo)
+                    require db/mongo
+                    trap stopMongoDBDevContainer EXIT
+                    startMongoDBDevContainer
+                    shift
+                    break
+                    ;;
+                influx)
+                    require db/influx
+                    trap stopInfluxDBDevContainer EXIT
+                    startInfluxDBDevContainer
+                    shift
+                    break
+                    ;;
+                *)
+                    logError "$1 DB is not available."
+                    exit 1
+                    ;;
+            esac
 
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
 
-    fi
+SCRIPT=$1 && shift
 
-    # if run has a script with the provided name, run it
-    if [ -f "$RUN_SCRIPT_DIR/scripts/$SCRIPT" ]; then
-        require "scripts/$SCRIPT" "$@"
+if [ -f "package.json" ]; then
+
+    SECOND_LEVEL_SCRIPT="$SCRIPT:$1"
+    COMMAND=$(node -e "console.log(require('./package.json').scripts['$SCRIPT'] || '')")
+    SECOND_LEVEL_COMMAND=$(node -e "console.log(require('./package.json').scripts['"$SECOND_LEVEL_SCRIPT"'] || '')")
+
+    if [ ! -z "$SECOND_LEVEL_COMMAND" ]; then
+        shift
+        npm --silent run "$SECOND_LEVEL_SCRIPT" -- $@
         exit $?
 
+    elif [ ! -z "$COMMAND" ]; then
+        npm --silent run "$SCRIPT" -- $@
+        exit $?
     fi
-}
 
-run_main $@
+
+fi
+
+# if run has a script with the provided name, run it
+if [ -f "$RUN_SCRIPT_DIR/scripts/$SCRIPT" ]; then
+    require "scripts/$SCRIPT" "$@"
+    exit $?
+
+fi
+
